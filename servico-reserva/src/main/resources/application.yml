@@ -1,0 +1,34 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: servico-reserva
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ticketflow?currentSchema=reserva}
+    username: ${SPRING_DATASOURCE_USERNAME:ticketflow}
+    password: ${SPRING_DATASOURCE_PASSWORD:ticketflow123}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: reserva
+  flyway:
+    schemas: reserva
+    default-schema: reserva
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+reserva:
+  reservation-timeout-minutes: ${BOOKING_RESERVATION_TIMEOUT_MINUTES:10}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

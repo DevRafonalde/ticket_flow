@@ -1,0 +1,30 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: servico-autenticacao
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ticketflow?currentSchema=autenticacao}
+    username: ${SPRING_DATASOURCE_USERNAME:ticketflow}
+    password: ${SPRING_DATASOURCE_PASSWORD:ticketflow123}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: autenticacao
+  flyway:
+    schemas: autenticacao
+    default-schema: autenticacao
+    locations: classpath:db/migration
+
+jwt:
+  secret: ${JWT_SECRET:change-me-in-a-real-env-file}
+  expiration-minutes: 60
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
