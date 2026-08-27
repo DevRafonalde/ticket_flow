@@ -3,5 +3,6 @@ CREATE TABLE autenticacao.usuarios (
     email VARCHAR(255) NOT NULL UNIQUE,
     senha_hash VARCHAR(255) NOT NULL,
     papel VARCHAR(50) NOT NULL DEFAULT 'CLIENTE',
-    criado_em TIMESTAMP NOT NULL DEFAULT now()
+    criado_em TIMESTAMP NOT NULL DEFAULT now(),
+    atualizado_em TIMESTAMP NOT NULL DEFAULT now()
 );

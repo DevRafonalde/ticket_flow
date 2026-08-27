@@ -5,5 +5,6 @@ CREATE TABLE catalogo.eventos (
     data_evento TIMESTAMP NOT NULL,
     total_assentos INTEGER NOT NULL,
     assentos_disponiveis INTEGER NOT NULL,
-    criado_em TIMESTAMP NOT NULL DEFAULT now()
+    criado_em TIMESTAMP NOT NULL DEFAULT now(),
+    atualizado_em TIMESTAMP NOT NULL DEFAULT now()
 );

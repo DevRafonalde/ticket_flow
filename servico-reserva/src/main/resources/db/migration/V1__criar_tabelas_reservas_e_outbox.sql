@@ -5,7 +5,8 @@ CREATE TABLE reserva.reservas (
     assentos INTEGER NOT NULL,
     situacao VARCHAR(50) NOT NULL DEFAULT 'PENDENTE',
     expira_em TIMESTAMP NOT NULL,
-    criado_em TIMESTAMP NOT NULL DEFAULT now()
+    criado_em TIMESTAMP NOT NULL DEFAULT now(),
+    atualizado_em TIMESTAMP NOT NULL DEFAULT now()
 );
 
 -- Padrão Outbox: eventos são gravados na mesma transação da reserva
@@ -16,5 +17,6 @@ CREATE TABLE reserva.eventos_saida (
     tipo_evento VARCHAR(100) NOT NULL,
     dados JSONB NOT NULL,
     criado_em TIMESTAMP NOT NULL DEFAULT now(),
+    atualizado_em TIMESTAMP NOT NULL DEFAULT now(),
     publicado_em TIMESTAMP
 );
