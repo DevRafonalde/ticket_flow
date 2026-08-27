@@ -5,6 +5,7 @@ import com.ticketflow.catalogo.model.entities.dto.PaginaEventos;
 import com.ticketflow.catalogo.model.entities.orm.EventoORM;
 import com.ticketflow.catalogo.model.repositories.EventoRepository;
 import com.ticketflow.catalogo.model.repositories.EventoSpecification;
+import com.ticketflow.catalogo.exception.ElementoNaoEncontradoException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -32,5 +33,11 @@ public class EventoService {
                 .totalElementos(paginaEncontrada.getTotalElements())
                 .totalPaginas(paginaEncontrada.getTotalPages())
                 .build();
+    }
+
+    public EventoDTO buscarPorId(String id) {
+        EventoORM evento = eventoRepository.findById(id)
+                .orElseThrow(() -> new ElementoNaoEncontradoException("Evento não encontrado para o id: " + id));
+        return modelMapper.map(evento, EventoDTO.class);
     }
 }

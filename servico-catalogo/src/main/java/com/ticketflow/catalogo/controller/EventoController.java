@@ -1,5 +1,6 @@
 package com.ticketflow.catalogo.controller;
 
+import com.ticketflow.catalogo.model.entities.dto.EventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.PaginaEventos;
 import com.ticketflow.catalogo.service.EventoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,10 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
@@ -39,5 +37,19 @@ public class EventoController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate) {
         PaginaEventos paginaEventos = eventoService.buscarEventos(pagina, tamanho, nome, de, ate);
         return ResponseEntity.ok(paginaEventos);
+    }
+
+    @ApiResponse(responseCode = "500", description = "Erro no servidor", content = @Content)
+    @ApiResponse(responseCode = "404", description = "Evento não encontrado (EVENTO_NAO_ENCONTRADO)", content = @Content)
+    @ApiResponse(responseCode = "200", description = "Evento retornado com sucesso",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventoDTO.class)))
+    @Operation(
+            summary = "Buscar evento por id",
+            description = "Retorna o detalhe de um evento pelo seu id. Não exige autenticação."
+    )
+    @GetMapping("/{id}")
+    public ResponseEntity<EventoDTO> buscarDetalhado(@PathVariable String id) {
+        EventoDTO evento = eventoService.buscarPorId(id);
+        return ResponseEntity.ok(evento);
     }
 }
