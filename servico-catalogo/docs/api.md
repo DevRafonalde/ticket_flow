@@ -92,3 +92,30 @@ Mesmo corpo do `POST`. Retorna `403 Forbidden` (`AUTENTICACAO_ACESSO_NEGADO`) se
 **Response**: `204 No Content`
 
 **Erros possíveis**: `EVENTO_POSSUI_RESERVAS_ATIVAS` (409) — evento com reservas ativas não pode ser excluído.
+
+---
+
+## Uso interno (servico-a-servico)
+
+Não fazem parte da API pública exposta ao frontend pelo `servico-gateway` - chamados diretamente
+entre serviços (ex: `http://servico-catalogo:8082`), autenticados com um segredo compartilhado
+diferente do JWT de usuário (header `X-Internal-Api-Key`, valor em `INTERNAL_API_KEY`), já que
+quem chama é outro backend, não um usuário logado.
+
+### `PATCH /api/catalogo/eventos/{id}/reservar`
+
+Usado pelo `servico-reserva` ao criar uma reserva, para debitar os assentos do estoque.
+
+**Request**
+```json
+{ "quantidade": 2 }
+```
+
+**Response**: `204 No Content`
+
+O desconto é atômico (um único `UPDATE` condicional no banco) - sob concorrência, duas reservas
+não conseguem debitar o mesmo último assento.
+
+**Erros possíveis**: `VALIDACAO_ERRO` (400), `AUTENTICACAO_INTERNA_INVALIDA` (401) — chave interna
+ausente/errada, `EVENTO_NAO_ENCONTRADO` (404), `EVENTO_ESGOTADO` (409) — sem assentos suficientes
+para a quantidade pedida.

@@ -93,6 +93,7 @@ services:
       SPRING_DATA_REDIS_HOST: ${REDIS_HOST:-redis}
       SPRING_DATA_REDIS_PORT: ${REDIS_PORT:-6379}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-a-real-env-file}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-change-me-in-a-real-env-file}
     depends_on:
       postgres:
         condition: service_healthy

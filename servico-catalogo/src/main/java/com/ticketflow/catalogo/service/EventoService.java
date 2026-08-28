@@ -3,6 +3,7 @@ package com.ticketflow.catalogo.service;
 import com.ticketflow.catalogo.config.cache.CacheNames;
 import com.ticketflow.catalogo.exception.AcessoNegadoException;
 import com.ticketflow.catalogo.exception.ElementoNaoEncontradoException;
+import com.ticketflow.catalogo.exception.EventoEsgotadoException;
 import com.ticketflow.catalogo.exception.EventoPossuiReservasAtivasException;
 import com.ticketflow.catalogo.exception.ValidacaoException;
 import com.ticketflow.catalogo.model.entities.dto.DisponibilidadeEventoDTO;
@@ -22,6 +23,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Objects;
@@ -144,5 +146,33 @@ public class EventoService {
 
         eventoBanco.setAtivo(false);
         eventoRepository.save(eventoBanco);
+    }
+
+    /**
+     * Chamado pelo servico-reserva (não por um usuário logado - por isso não recebe
+     * {@link UsuarioAutenticado}, ver {@link com.ticketflow.catalogo.security.InternalApiKeyService})
+     * quando uma reserva é criada, para debitar os assentos do estoque deste serviço.
+     *
+     * <p>O desconto em si é feito por {@link EventoRepository#reservarAssentos} - um único UPDATE
+     * atômico que já embute a checagem "tem assento disponível?" na cláusula WHERE, evitando que
+     * duas reservas concorrentes vendam o mesmo último assento (ver javadoc do método). Esta camada
+     * de service só decide, quando o UPDATE não afeta nenhuma linha, qual dos dois motivos foi:
+     * evento não existe (404) ou existe mas não tinha assento suficiente (409 EVENTO_ESGOTADO) -
+     * informação que o retorno do UPDATE sozinho não distingue.
+     */
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.TODOS_EVENTOS, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.EVENTO_POR_ID, key = "#id"),
+            @CacheEvict(cacheNames = CacheNames.DISPONIBILIDADE_EVENTO, key = "#id")
+    })
+    public void reservarAssentos(String id, int quantidade) {
+        int linhasAfetadas = eventoRepository.reservarAssentos(id, quantidade);
+        if (linhasAfetadas == 0) {
+            if (!eventoRepository.existsById(id)) {
+                throw new ElementoNaoEncontradoException("Evento não encontrado para o id: " + id);
+            }
+            throw new EventoEsgotadoException("Não há assentos suficientes disponíveis para este evento.");
+        }
     }
 }

@@ -37,3 +37,8 @@ jwt:
   # Mesmo segredo usado pelo servico-autenticacao para assinar o token (ver .env.example) -
   # é o que permite validar o JWT aqui sem chamar aquele serviço a cada requisição.
   secret: ${JWT_SECRET:change-me-in-a-real-env-file}
+
+internal:
+  # Segredo servico-a-servico (não é JWT de usuário) - exigido em endpoints chamados só por
+  # outros backends, como a reserva de assentos usada pelo servico-reserva.
+  api-key: ${INTERNAL_API_KEY:change-me-in-a-real-env-file}

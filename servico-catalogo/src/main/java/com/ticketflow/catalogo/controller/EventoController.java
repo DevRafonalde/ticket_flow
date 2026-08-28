@@ -4,6 +4,8 @@ import com.ticketflow.catalogo.model.entities.dto.ModificarEventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.DisponibilidadeEventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.EventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.PaginaEventos;
+import com.ticketflow.catalogo.model.entities.dto.ReservarAssentosDTO;
+import com.ticketflow.catalogo.security.InternalApiKeyService;
 import com.ticketflow.catalogo.security.JwtService;
 import com.ticketflow.catalogo.security.UsuarioAutenticado;
 import com.ticketflow.catalogo.service.EventoService;
@@ -27,6 +29,7 @@ import java.time.LocalDate;
 public class EventoController {
     private final EventoService eventoService;
     private final JwtService jwtService;
+    private final InternalApiKeyService internalApiKeyService;
 
     @ApiResponse(responseCode = "500", description = "Erro no servidor", content = @Content)
     @ApiResponse(responseCode = "200", description = "Lista de eventos retornada com sucesso",
@@ -134,6 +137,29 @@ public class EventoController {
     public ResponseEntity<Void> deletar(@RequestHeader(HttpHeaders.AUTHORIZATION) String autorizacao, @PathVariable String id) {
         UsuarioAutenticado usuario = jwtService.autenticar(autorizacao);
         eventoService.deletarEvento(usuario, id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @ApiResponse(responseCode = "500", description = "Erro no servidor", content = @Content)
+    @ApiResponse(responseCode = "400", description = "Quantidade ausente ou inválida (VALIDACAO_ERRO)", content = @Content)
+    @ApiResponse(responseCode = "401", description = "Chave de API interna ausente ou inválida (AUTENTICACAO_INTERNA_INVALIDA)", content = @Content)
+    @ApiResponse(responseCode = "404", description = "Evento não encontrado (EVENTO_NAO_ENCONTRADO)", content = @Content)
+    @ApiResponse(responseCode = "409", description = "Assentos insuficientes (EVENTO_ESGOTADO)", content = @Content)
+    @ApiResponse(responseCode = "204", description = "Assentos reservados com sucesso", content = @Content)
+    @Operation(
+            summary = "[USO INTERNO] Reservar assentos de um evento",
+            description = "Debita 'quantidade' de assentosDisponiveis. Não é um endpoint de usuário final: "
+                    + "é chamado pelo servico-reserva ao criar uma reserva, autenticado com a chave de API "
+                    + "interna compartilhada entre serviços (header X-Internal-Api-Key), não um JWT de usuário."
+    )
+    @PatchMapping("/{id}/reservar")
+    public ResponseEntity<Void> reservarAssentos(@RequestHeader("X-Internal-Api-Key") String chaveInterna, @PathVariable String id, @Valid @RequestBody ReservarAssentosDTO dto) {
+        // Quem chama aqui é o servico-reserva, não um usuário logado - por isso a checagem é contra
+        // o segredo interno compartilhado, e não contra um JWT (ver InternalApiKeyService).
+        internalApiKeyService.validar(chaveInterna);
+
+        eventoService.reservarAssentos(id, dto.getQuantidade());
+
         return ResponseEntity.noContent().build();
     }
 }
