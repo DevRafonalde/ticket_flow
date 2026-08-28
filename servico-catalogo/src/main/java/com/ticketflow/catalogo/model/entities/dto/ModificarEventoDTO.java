@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CriarEventoDTO {
+public class ModificarEventoDTO {
     @NotBlank(message = "nome é obrigatório")
     private String nome;
 

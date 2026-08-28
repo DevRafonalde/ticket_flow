@@ -1,6 +1,6 @@
 package com.ticketflow.catalogo.controller;
 
-import com.ticketflow.catalogo.model.entities.dto.CriarEventoDTO;
+import com.ticketflow.catalogo.model.entities.dto.ModificarEventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.DisponibilidadeEventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.EventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.PaginaEventos;
@@ -88,9 +88,7 @@ public class EventoController {
                     + "servico-autenticacao) de um usuário com papel ORGANIZADOR ou ADMIN."
     )
     @PostMapping
-    public ResponseEntity<EventoDTO> criar(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String autorizacao,
-            @Valid @RequestBody CriarEventoDTO dto) {
+    public ResponseEntity<EventoDTO> criar(@RequestHeader(HttpHeaders.AUTHORIZATION) String autorizacao, @Valid @RequestBody ModificarEventoDTO dto) {
         // 1) Quem está chamando? O JwtService confere localmente (sem chamar o servico-autenticacao)
         //    que o JWT foi assinado com o segredo compartilhado e ainda não expirou, e devolve o id
         //    e o papel do usuário embutidos no token (claims "sub" e "papel").
@@ -100,5 +98,24 @@ public class EventoController {
         EventoDTO criado = eventoService.criarEvento(usuario, dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
+    }
+
+    @ApiResponse(responseCode = "500", description = "Erro no servidor", content = @Content)
+    @ApiResponse(responseCode = "400", description = "Dados inválidos, ex: data no passado (VALIDACAO_ERRO)", content = @Content)
+    @ApiResponse(responseCode = "401", description = "Token ausente, mal formatado ou expirado (AUTENTICACAO_TOKEN_EXPIRADO)", content = @Content)
+    @ApiResponse(responseCode = "403", description = "Usuário autenticado sem papel ORGANIZADOR/ADMIN (AUTENTICACAO_ACESSO_NEGADO)", content = @Content)
+    @ApiResponse(responseCode = "404", description = "Evento não encontrado (EVENTO_NAO_ENCONTRADO)", content = @Content)
+    @ApiResponse(responseCode = "200", description = "Evento atualizado com sucesso",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventoDTO.class)))
+    @Operation(
+            summary = "Atualizar evento",
+            description = "Atualiza um evento existente. Requer token JWT (emitido pelo "
+                    + "servico-autenticacao) de um usuário com papel ORGANIZADOR ou ADMIN."
+    )
+    @PutMapping("/{id}")
+    public ResponseEntity<EventoDTO> atualizar(@RequestHeader(HttpHeaders.AUTHORIZATION) String autorizacao, @Valid @RequestBody ModificarEventoDTO dto, @PathVariable String id) {
+        UsuarioAutenticado usuario = jwtService.autenticar(autorizacao);
+        EventoDTO criado = eventoService.atualizarEvento(usuario, dto, id);
+        return ResponseEntity.ok(criado);
     }
 }
