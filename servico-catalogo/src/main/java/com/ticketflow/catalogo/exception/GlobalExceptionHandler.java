@@ -13,17 +13,16 @@ import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
     @ExceptionHandler(ValidacaoException.class)
     public ResponseEntity<ErroResposta> tratarValidacaoException(ValidacaoException ex, HttpServletRequest request) {
         return ResponseEntity.status(ex.getStatus())
-                .body(construirErro(ex.getStatus(), ex.getMessage(), request, ex.getDetalhes()));
+                .body(construirErro(ex.getStatus(), ex.getCodigo(), ex.getMessage(), request, ex.getDetalhes()));
     }
 
     @ExceptionHandler(ElementoNaoEncontradoException.class)
     public ResponseEntity<ErroResposta> tratarElementoNaoEncontrado(ElementoNaoEncontradoException ex, HttpServletRequest request) {
         return ResponseEntity.status(ex.getStatus())
-                .body(construirErro(ex.getStatus(), ex.getMessage(), request, null));
+                .body(construirErro(ex.getStatus(), ex.getCodigo(), ex.getMessage(), request, null));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -37,20 +36,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NegocioException.class)
     public ResponseEntity<ErroResposta> tratarNegocioException(NegocioException ex, HttpServletRequest request) {
         return ResponseEntity.status(ex.getStatus())
-                .body(construirErro(ex.getStatus(), ex.getMessage(), request, null));
+                .body(construirErro(ex.getStatus(), ex.getCodigo(), ex.getMessage(), request, null));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErroResposta> tratarErroGenerico(Exception ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(construirErro(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno no servidor", request, null));
+                .body(construirErro(HttpStatus.INTERNAL_SERVER_ERROR, "ERRO_INTERNO", "Erro interno no servidor", request, null));
     }
 
-    private ErroResposta construirErro(HttpStatus status, String mensagem, HttpServletRequest request, List<String> detalhes) {
+    private ErroResposta construirErro(HttpStatus status, String codigo, String mensagem, HttpServletRequest request, List<String> detalhes) {
         return new ErroResposta(
                 LocalDateTime.now(),
                 status.value(),
-                status.getReasonPhrase(),
+                codigo,
                 mensagem,
                 request.getRequestURI(),
                 detalhes

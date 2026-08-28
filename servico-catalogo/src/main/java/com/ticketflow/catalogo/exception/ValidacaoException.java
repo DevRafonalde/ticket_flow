@@ -9,7 +9,6 @@ import java.util.List;
  * (fora do fluxo padrão de Bean Validation), podendo carregar múltiplos detalhes.
  */
 public class ValidacaoException extends NegocioException {
-
     private final List<String> detalhes;
 
     public ValidacaoException(String mensagem) {
@@ -17,7 +16,7 @@ public class ValidacaoException extends NegocioException {
     }
 
     public ValidacaoException(String mensagem, List<String> detalhes) {
-        super(HttpStatus.BAD_REQUEST, mensagem);
+        super(HttpStatus.BAD_REQUEST, "VALIDACAO_ERRO", mensagem);
         this.detalhes = detalhes;
     }
 

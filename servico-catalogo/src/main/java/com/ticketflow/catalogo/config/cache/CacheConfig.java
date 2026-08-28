@@ -50,7 +50,6 @@ import java.util.Map;
 @Configuration
 @EnableCaching
 public class CacheConfig implements CachingConfigurer {
-
     private static final String KEY_PREFIX = "servicoCatalogo::";
 
     @Bean

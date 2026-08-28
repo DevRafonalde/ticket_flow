@@ -32,3 +32,8 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+jwt:
+  # Mesmo segredo usado pelo servico-autenticacao para assinar o token (ver .env.example) -
+  # é o que permite validar o JWT aqui sem chamar aquele serviço a cada requisição.
+  secret: ${JWT_SECRET:change-me-in-a-real-env-file}

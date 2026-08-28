@@ -39,6 +39,14 @@ public class EventoORM {
     @Column(name = "assentos_disponiveis")
     private Integer assentosDisponiveis;
 
+    /**
+     * Id (sub do JWT) do usuário ORGANIZADOR que criou o evento. Não é exposto na API pública
+     * (não faz parte do {@code EventoDTO}) - usado apenas internamente para a checagem de posse
+     * em edição/exclusão (um ORGANIZADOR só mexe nos próprios eventos; ADMIN mexe em qualquer um).
+     */
+    @Column(name = "organizador_id")
+    private String organizadorId;
+
     @CreatedDate
     @Column(name = "criado_em")
     private LocalDateTime criadoEm;

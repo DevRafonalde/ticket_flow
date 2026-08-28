@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record ErroResposta(
-        LocalDateTime timestamp,
-        int status,
+        LocalDateTime dataHora,
+        int codigoStatus,
         String erro,
         String mensagem,
         String caminho,

@@ -15,7 +15,6 @@ import java.time.Duration;
  */
 @Configuration
 public class EventoCacheConfig {
-
     private static final Duration TTL = Duration.ofMinutes(5);
     private static final Duration TTL_DISPONIBILIDADE = Duration.ofSeconds(30);
 

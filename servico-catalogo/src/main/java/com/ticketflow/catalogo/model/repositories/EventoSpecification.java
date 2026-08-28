@@ -11,7 +11,6 @@ import java.time.LocalTime;
 @NoArgsConstructor
 public class EventoSpecification {
     public static Specification<EventoORM> comFiltros(String nome, LocalDate de, LocalDate ate) {
-
         /*
         Caso chame
         EventoSpecification.comFiltros("Java", LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31))

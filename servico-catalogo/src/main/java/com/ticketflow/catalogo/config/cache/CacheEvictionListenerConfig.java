@@ -29,7 +29,6 @@ import org.springframework.util.ErrorHandler;
 @Configuration
 @RequiredArgsConstructor
 public class CacheEvictionListenerConfig {
-
     private final RedisConnectionFactory connectionFactory;
     private final CacheManager cacheManager;
 

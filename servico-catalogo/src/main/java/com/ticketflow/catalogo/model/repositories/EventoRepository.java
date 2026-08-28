@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.Optional;
 
 public interface EventoRepository extends JpaRepository<EventoORM, String>, JpaSpecificationExecutor<EventoORM> {
-
     /**
      * Projeção via query derivada do nome do método - o Spring Data gera a query com
      * base no construtor de {@link DisponibilidadeEventoDTO} (id, assentosDisponiveis),

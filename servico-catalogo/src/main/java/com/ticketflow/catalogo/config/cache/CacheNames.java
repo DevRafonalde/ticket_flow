@@ -6,7 +6,6 @@ package com.ticketflow.catalogo.config.cache;
  * quanto nas anotações {@code @Cacheable} (que exigem valores constantes em tempo de compilação).
  */
 public final class CacheNames {
-
     public static final String TODOS_EVENTOS = "todosEventos";
     public static final String EVENTO_POR_ID = "eventoPorId";
     public static final String DISPONIBILIDADE_EVENTO = "disponibilidadeEvento";
