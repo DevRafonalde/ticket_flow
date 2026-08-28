@@ -3,6 +3,7 @@ package com.ticketflow.catalogo.service;
 import com.ticketflow.catalogo.config.cache.CacheNames;
 import com.ticketflow.catalogo.exception.AcessoNegadoException;
 import com.ticketflow.catalogo.exception.ElementoNaoEncontradoException;
+import com.ticketflow.catalogo.exception.EventoPossuiReservasAtivasException;
 import com.ticketflow.catalogo.exception.ValidacaoException;
 import com.ticketflow.catalogo.model.entities.dto.DisponibilidadeEventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.EventoDTO;
@@ -124,5 +125,24 @@ public class EventoService {
         EventoORM eventoSalvo = eventoRepository.save(eventoBanco);
 
         return modelMapper.map(eventoSalvo, EventoDTO.class);
+    }
+
+    public void deletarEvento(UsuarioAutenticado usuario, String id) {
+        if (usuario.papel() != Papel.ORGANIZADOR && usuario.papel() != Papel.ADMIN) {
+            throw new AcessoNegadoException("Apenas organizadores ou administradores podem deletar eventos.");
+        }
+
+        EventoORM eventoBanco = eventoRepository.findById(id).orElseThrow(() -> new ElementoNaoEncontradoException("Evento não encontrado para o id: " + id));
+        if (usuario.papel() != Papel.ADMIN && !Objects.equals(usuario.id(), eventoBanco.getOrganizadorId())) {
+            throw new AcessoNegadoException("Apenas o dono do evento ou administradores podem editar eventos.");
+        }
+
+        int assentosReservados = eventoBanco.getTotalAssentos() - eventoBanco.getAssentosDisponiveis();
+        if (assentosReservados != 0) {
+            throw new EventoPossuiReservasAtivasException("Evento com reservas ativas não pode ser excluído.");
+        }
+
+        eventoBanco.setAtivo(false);
+        eventoRepository.save(eventoBanco);
     }
 }

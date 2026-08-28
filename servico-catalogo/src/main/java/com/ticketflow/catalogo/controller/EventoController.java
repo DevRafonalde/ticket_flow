@@ -118,4 +118,22 @@ public class EventoController {
         EventoDTO criado = eventoService.atualizarEvento(usuario, dto, id);
         return ResponseEntity.ok(criado);
     }
+
+    @ApiResponse(responseCode = "500", description = "Erro no servidor", content = @Content)
+    @ApiResponse(responseCode = "401", description = "Token ausente, mal formatado ou expirado (AUTENTICACAO_TOKEN_EXPIRADO)", content = @Content)
+    @ApiResponse(responseCode = "403", description = "Usuário autenticado sem papel ORGANIZADOR/ADMIN (AUTENTICACAO_ACESSO_NEGADO)", content = @Content)
+    @ApiResponse(responseCode = "404", description = "Evento não encontrado (EVENTO_NAO_ENCONTRADO)", content = @Content)
+    @ApiResponse(responseCode = "409", description = "Evento com reservar ativas (EVENTO_POSSUI_RESERVAS_ATIVAS)", content = @Content)
+    @ApiResponse(responseCode = "204", description = "Evento deletado com sucesso", content = @Content)
+    @Operation(
+            summary = "Deletar evento",
+            description = "Deleta um evento existente. Requer token JWT (emitido pelo "
+                    + "servico-autenticacao) de um usuário com papel ORGANIZADOR ou ADMIN."
+    )
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@RequestHeader(HttpHeaders.AUTHORIZATION) String autorizacao, @PathVariable String id) {
+        UsuarioAutenticado usuario = jwtService.autenticar(autorizacao);
+        eventoService.deletarEvento(usuario, id);
+        return ResponseEntity.noContent().build();
+    }
 }
