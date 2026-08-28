@@ -1,5 +1,6 @@
 package com.ticketflow.catalogo.controller;
 
+import com.ticketflow.catalogo.model.entities.dto.DisponibilidadeEventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.EventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.PaginaEventos;
 import com.ticketflow.catalogo.service.EventoService;
@@ -50,6 +51,21 @@ public class EventoController {
     @GetMapping("/{id}")
     public ResponseEntity<EventoDTO> buscarDetalhado(@PathVariable String id) {
         EventoDTO evento = eventoService.buscarPorId(id);
+        return ResponseEntity.ok(evento);
+    }
+
+    @ApiResponse(responseCode = "500", description = "Erro no servidor", content = @Content)
+    @ApiResponse(responseCode = "404", description = "Evento não encontrado (EVENTO_NAO_ENCONTRADO)", content = @Content)
+    @ApiResponse(responseCode = "200", description = "Disponibilidade retornada com sucesso",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = DisponibilidadeEventoDTO.class)))
+    @Operation(
+            summary = "Buscar disponibilidade de um evento por id",
+            description = "Retorna a quantidade de assentos disponíveis em um evento pelo seu id. Não exige autenticação." +
+                    "Endpoint cacheado."
+    )
+    @GetMapping("/{id}/disponibilidade")
+    public ResponseEntity<DisponibilidadeEventoDTO> buscarDisponibilidadeEvento(@PathVariable String id) {
+        DisponibilidadeEventoDTO evento = eventoService.buscarDisponibilidadeEvento(id);
         return ResponseEntity.ok(evento);
     }
 }
