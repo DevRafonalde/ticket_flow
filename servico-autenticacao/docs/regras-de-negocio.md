@@ -7,11 +7,11 @@ Parte de [`docs/regras-de-negocio.md`](../../docs/regras-de-negocio.md) (fonte d
 ### 1.1 Cadastro
 - E-mail é único no sistema; tentativa de cadastro com e-mail já existente retorna `409 Conflict` (`AUTENTICACAO_EMAIL_JA_EXISTE`).
 - Senha exige no mínimo 8 caracteres, contendo pelo menos 1 letra maiúscula e 1 número.
-- Todo usuário é criado com o papel `CLIENTE` por padrão. Papéis `ORGANIZADOR` e `ADMIN` só podem ser atribuídos por um `ADMIN` já existente (endpoint administrativo, não pelo cadastro público).
+- Todo usuário é criado com o papel `CLIENTE` por padrão. Papéis `ORGANIZADOR` e `ADMIN` só podem ser atribuídos por um `ADMIN` já existente, através de um endpoint administrativo — **contrato ainda não definido em nenhum `docs/api.md`** (nem o path, nem o formato de request/response); definir antes de implementar.
 
 ### 1.2 Login e tokens
 - Login bem-sucedido retorna um **token de acesso** (JWT, expira em `JWT_EXPIRATION_MINUTES`, padrão 60 min) e um **token de renovação** (expira em 7 dias).
-- O token de acesso carrega `sub` (id do usuário), `papel` e `exp`. O `servico-gateway` e os demais serviços validam apenas a assinatura e a expiração — não consultam o `servico-autenticacao` a cada requisição (stateless).
+- O token de acesso carrega `sub` (id do usuário), `papel` e `exp`. **Só os serviços de backend** (`servico-catalogo`, e futuramente `servico-reserva`) validam o token — conferem apenas a assinatura e a expiração, localmente, sem consultar o `servico-autenticacao` a cada requisição (stateless). O `servico-gateway` não participa dessa validação: é um roteador simples, sem lógica de negócio, que só encaminha o header `Authorization` adiante.
 - O token de renovação é de uso único: ao ser trocado por um novo par de tokens, o antigo é invalidado (rotação de token de renovação).
 - 3 tentativas de login inválidas consecutivas para o mesmo e-mail bloqueiam novas tentativas por 60 segundos (mitigação simples de força bruta).
 

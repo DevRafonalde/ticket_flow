@@ -26,7 +26,7 @@ Lista eventos com paginação e filtros. **Não exige autenticação.**
       "id": "a1b2c3d4-...",
       "nome": "Show da Banda X",
       "local": "Arena Y",
-      "dataEvento": "2026-11-20T22:00:00Z",
+      "dataEvento": "2026-11-20T22:00:00",
       "totalAssentos": 5000,
       "assentosDisponiveis": 1200
     }
@@ -70,7 +70,7 @@ Consulta rápida de disponibilidade (endpoint cacheado, ideal para polling no fr
 {
   "nome": "Show da Banda X",
   "local": "Arena Y",
-  "dataEvento": "2026-11-20T22:00:00Z",
+  "dataEvento": "2026-11-20T22:00:00",
   "totalAssentos": 5000
 }
 ```
@@ -119,3 +119,28 @@ não conseguem debitar o mesmo último assento.
 **Erros possíveis**: `VALIDACAO_ERRO` (400), `AUTENTICACAO_INTERNA_INVALIDA` (401) — chave interna
 ausente/errada, `EVENTO_NAO_ENCONTRADO` (404), `EVENTO_ESGOTADO` (409) — sem assentos suficientes
 para a quantidade pedida.
+
+---
+
+### `PATCH /api/catalogo/eventos/{id}/liberar`
+
+> **Ainda não implementado.** Contrato documentado para o `servico-reserva` integrar contra ele
+> assim que existir — ver `docs/architecture.md` §9. Operação inversa de `/reservar`.
+
+Usado pelo `servico-reserva` para devolver assentos ao estoque de um evento: quando uma reserva
+`PENDENTE` expira sem pagamento (job de expiração), ou quando uma reserva `CONFIRMADA` é
+cancelada pelo cliente.
+
+**Request**
+```json
+{ "quantidade": 2 }
+```
+
+**Response**: `204 No Content`
+
+O incremento deve ser atômico e limitado a `totalAssentos` — assim como `/reservar`, não pode
+deixar `assentosDisponiveis` ultrapassar `totalAssentos`, mesmo sob chamadas concorrentes ou
+duplicadas (ex.: retry de rede do relay do outbox).
+
+**Erros possíveis**: `VALIDACAO_ERRO` (400), `AUTENTICACAO_INTERNA_INVALIDA` (401) — chave interna
+ausente/errada, `EVENTO_NAO_ENCONTRADO` (404).

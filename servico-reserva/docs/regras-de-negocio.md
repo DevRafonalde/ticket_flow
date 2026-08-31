@@ -13,7 +13,8 @@ Parte de [`docs/regras-de-negocio.md`](../../docs/regras-de-negocio.md) (fonte d
 - Se não houver assentos suficientes disponíveis no momento da criação, retorna `409 Conflict` (`EVENTO_ESGOTADO`) e nenhum assento é decrementado.
 
 ### 3.2 Controle de concorrência
-- O decremento de `assentosDisponiveis` usa **lock otimista** (`@Version` na entidade do evento). Duas requisições simultâneas disputando o(s) último(s) assento(s) resultam em uma reserva bem-sucedida e outra recebendo `409 Conflict` (`RESERVA_CONFLITO`) — o cliente deve tratar esse código reconsultando a disponibilidade antes de tentar novamente.
+- O decremento de `assentosDisponiveis` é feito pelo `servico-catalogo` (`PATCH /eventos/{id}/reservar`), via um `UPDATE` atômico e condicional (`assentos_disponiveis >= quantidade` na cláusula `WHERE`) — não é um lock otimista do lado da reserva; `servico-reserva` não tem acesso à entidade do evento, que pertence a outro schema/serviço.
+- Duas requisições simultâneas disputando o(s) último(s) assento(s): a que chegar primeiro no catálogo desconta e segue; a outra recebe `409 Conflict` (`EVENTO_ESGOTADO`) do catálogo. `servico-reserva` **repassa esse mesmo código ao cliente**, sem traduzir para um código próprio de reserva — o cliente trata `EVENTO_ESGOTADO` do mesmo jeito nos dois casos (falta de estoque "de partida" ou perda da corrida por concorrência): reconsultando a disponibilidade antes de tentar de novo.
 
 ### 3.3 Máquina de estados da reserva
 
@@ -36,8 +37,9 @@ CONFIRMADA --(cliente cancela, até 24h antes do evento)--> CANCELADA
 - Se o pagamento falhar: reserva permanece `PENDENTE`, cliente pode tentar novamente até o `expiraEm`.
 
 ### 3.5 Padrão Outbox
-- Toda mudança de estado relevante da reserva (confirmação, cancelamento, expiração) grava uma linha na tabela `reserva.eventos_saida` **na mesma transação** da mudança de estado.
+- Toda mudança de estado relevante da reserva (confirmação, cancelamento, expiração) grava uma linha na tabela `reserva.eventos_saida` **na mesma transação** da mudança de estado, publicada depois nos tópicos Kafka `reserva-confirmada`, `reserva-cancelada` ou `reserva-expirada`, respectivamente.
 - Um processo separado (relay) lê as linhas não publicadas (`publicado_em IS NULL`), publica no Kafka e marca como publicadas. Isso garante que o evento só é publicado se a transação de negócio foi de fato commitada — sem esse padrão, uma falha entre "salvar no banco" e "publicar no Kafka" deixaria os sistemas inconsistentes.
+- `reserva-expirada` é publicado mesmo o `servico-notificacao` não consumindo esse tópico hoje (decisão consciente, não gap — ver `servico-notificacao/docs/regras-de-negocio.md`); o evento existe para outros consumidores futuros (ex.: métricas, auditoria).
 
 ## Dados
 

@@ -61,13 +61,13 @@ rotas do gateway.
 
 ## 2. Serviços
 
-| Serviço | Porta | Stack | Persistência | Papel no sistema |
-|---|---|---|---|---|
-| `servico-gateway` | 8080 | Spring Cloud Gateway (reativo/WebFlux) | — | Ponto único de entrada; roteamento por prefixo de path; (planejado) rate limiting |
-| `servico-autenticacao` | 8081 | Spring Web (servlet) + Spring Data JPA | Postgres · schema `autenticacao` | Cadastro, login, emissão de JWT, OAuth2 (Google) |
-| `servico-catalogo` | 8082 | Spring Web (servlet) + Spring Data JPA + Redis | Postgres · schema `catalogo` | CRUD de eventos, disponibilidade de assentos, cache |
-| `servico-reserva` | 8083 | Spring Web (servlet) + Spring Data JPA + Kafka producer | Postgres · schema `reserva` | Reservas, pagamento (mock), publicação de eventos (outbox) |
-| `servico-notificacao` | 8084 | Spring Kafka (consumer) + Spring Mail | — | Consome eventos de reserva, envia e-mails |
+| Serviço                | Porta | Stack                                                   | Persistência                     | Papel no sistema                                                                  |
+|------------------------|-------|---------------------------------------------------------|----------------------------------|-----------------------------------------------------------------------------------|
+| `servico-gateway`      | 8080  | Spring Cloud Gateway (reativo/WebFlux)                  | —                                | Ponto único de entrada; roteamento por prefixo de path; (planejado) rate limiting |
+| `servico-autenticacao` | 8081  | Spring Web (servlet) + Spring Data JPA                  | Postgres · schema `autenticacao` | Cadastro, login, emissão de JWT, OAuth2 (Google)                                  |
+| `servico-catalogo`     | 8082  | Spring Web (servlet) + Spring Data JPA + Redis          | Postgres · schema `catalogo`     | CRUD de eventos, disponibilidade de assentos, cache                               |
+| `servico-reserva`      | 8083  | Spring Web (servlet) + Spring Data JPA + Kafka producer | Postgres · schema `reserva`      | Reservas, pagamento (mock), publicação de eventos (outbox)                        |
+| `servico-notificacao`  | 8084  | Spring Kafka (consumer) + Spring Mail                   | —                                | Consome eventos de reserva, envia e-mails                                         |
 
 Cada serviço é um módulo Maven independente (pom próprio, sem parent compartilhado), com seu
 próprio `Dockerfile` — build multi-stage (`maven:3.9-eclipse-temurin-21` → `eclipse-temurin:21-jre-alpine`)
@@ -180,7 +180,7 @@ Formato de erro (`ErroResposta`), igual em todos os serviços — este é o cont
 
 ```json
 {
-  "dataHora": "2026-08-27T20:15:00Z",
+  "dataHora": "2026-08-27T20:15:00",
   "codigoStatus": 409,
   "erro": "EVENTO_ESGOTADO",
   "mensagem": "Não há assentos suficientes disponíveis para este evento.",
@@ -325,13 +325,13 @@ cancelamento/reembolso simulado.
 
 ## 7. Consistência e concorrência
 
-| Problema | Mecanismo | Onde |
-|---|---|---|
-| Duas reservas disputando o último assento | `UPDATE` atômico e condicional (`assentos_disponiveis >= :quantidade` na cláusula `WHERE`) — não um find-then-save | `EventoRepository.reservarAssentos` (`servico-catalogo`, implementado) |
-| Publicar um evento sem a transação de negócio ter commitado (ou vice-versa) | Padrão **Outbox**: grava o evento na mesma transação da mudança de estado, um relay separado publica no Kafka e marca como publicado | `reserva.eventos_saida` (schema pronto, relay ainda não implementado) |
-| Retry de rede duplicando uma cobrança | Header `Idempotency-Key` obrigatório em `POST /reservas/{id}/pagar`: mesma chave para a mesma reserva retorna a mesma resposta, sem reprocessar | Especificado em `servico-reserva/docs/regras-de-negocio.md` 3.4 (ainda não implementado) |
-| Cache servindo disponibilidade desatualizada | Cache-aside com TTL curto (30s) + invalidação orientada a evento | `servico-catalogo` (TTL implementado; invalidação por evento externo ainda usa um canal Redis Pub/Sub genérico — ver nota abaixo) |
-| Força bruta em login | 3 tentativas inválidas consecutivas por e-mail bloqueiam por 60s | Especificado em `servico-autenticacao/docs/regras-de-negocio.md` 1.2 (ainda não implementado) |
+| Problema                                                                    | Mecanismo                                                                                                                                       | Onde                                                                                                                              |
+|-----------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| Duas reservas disputando o último assento                                   | `UPDATE` atômico e condicional (`assentos_disponiveis >= :quantidade` na cláusula `WHERE`) — não um find-then-save                              | `EventoRepository.reservarAssentos` (`servico-catalogo`, implementado)                                                            |
+| Publicar um evento sem a transação de negócio ter commitado (ou vice-versa) | Padrão **Outbox**: grava o evento na mesma transação da mudança de estado, um relay separado publica no Kafka e marca como publicado            | `reserva.eventos_saida` (schema pronto, relay ainda não implementado)                                                             |
+| Retry de rede duplicando uma cobrança                                       | Header `Idempotency-Key` obrigatório em `POST /reservas/{id}/pagar`: mesma chave para a mesma reserva retorna a mesma resposta, sem reprocessar | Especificado em `servico-reserva/docs/regras-de-negocio.md` 3.4 (ainda não implementado)                                          |
+| Cache servindo disponibilidade desatualizada                                | Cache-aside com TTL curto (30s) + invalidação orientada a evento                                                                                | `servico-catalogo` (TTL implementado; invalidação por evento externo ainda usa um canal Redis Pub/Sub genérico — ver nota abaixo) |
+| Força bruta em login                                                        | 3 tentativas inválidas consecutivas por e-mail bloqueiam por 60s                                                                                | Especificado em `servico-autenticacao/docs/regras-de-negocio.md` 1.2 (ainda não implementado)                                     |
 
 **Nota sobre invalidação de cache:** a regra de negócio (`servico-catalogo/docs/regras-de-negocio.md`
 2.3) descreve invalidação via o próprio `servico-reserva` publicando eventos de reserva no Kafka, e
@@ -345,11 +345,11 @@ Resolver essa divergência (Kafka vs. Redis Pub/Sub) é um próximo passo em abe
 
 ## 8. Dados
 
-| Schema | Tabelas | Dono |
-|---|---|---|
-| `autenticacao` | `usuarios` (id, email único, senha_hash, papel, criado/atualizado_em) | `servico-autenticacao` |
-| `catalogo` | `eventos` (id, nome, local, data_evento, total_assentos, assentos_disponiveis, organizador_id, ativo, criado/atualizado_em) | `servico-catalogo` |
-| `reserva` | `reservas` (id, evento_id, usuario_id, assentos, situacao, expira_em, criado/atualizado_em); `eventos_saida` (outbox: id, id_agregado, tipo_evento, dados JSONB, publicado_em) | `servico-reserva` |
+| Schema         | Tabelas                                                                                                                                                                        | Dono                   |
+|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|
+| `autenticacao` | `usuarios` (id, email único, senha_hash, papel, criado/atualizado_em)                                                                                                          | `servico-autenticacao` |
+| `catalogo`     | `eventos` (id, nome, local, data_evento, total_assentos, assentos_disponiveis, organizador_id, ativo, criado/atualizado_em)                                                    | `servico-catalogo`     |
+| `reserva`      | `reservas` (id, evento_id, usuario_id, assentos, situacao, expira_em, criado/atualizado_em); `eventos_saida` (outbox: id, id_agregado, tipo_evento, dados JSONB, publicado_em) | `servico-reserva`      |
 
 Cada schema é gerenciado exclusivamente pelas migrações Flyway do próprio serviço — nenhum serviço
 lê ou escreve diretamente no schema de outro; toda integração passa por API (síncrona) ou Kafka
@@ -365,13 +365,13 @@ Boa parte de `docs/` (regras de negócio e API) descreve o **contrato alvo** do 
 antes ou em paralelo à implementação. Nem todo endpoint documentado existe em código ainda — esta
 seção existe para não confundir as duas coisas.
 
-| Serviço | Implementado | Ainda não implementado |
-|---|---|---|
-| `servico-gateway` | Roteamento por path para os 3 serviços com API HTTP; scaffold de exceções | Rate limiting por IP; auditoria de escrita |
-| `servico-autenticacao` | Schema/migração (`usuarios`); scaffold de exceções; `JWT_SECRET`/`JWT_EXPIRATION_MINUTES` configurados | Cadastro, login, refresh, OAuth2 Google, bloqueio por tentativas — nenhum controller/service existe ainda |
-| `servico-catalogo` | CRUD de eventos completo; autorização por papel e posse; validação de JWT local; débito atômico de assentos (endpoint interno); cache Redis cache-aside com TTLs por endpoint; soft delete; exceções com código de erro alinhado ao contrato de API | Consumo de eventos Kafka do `servico-reserva` para invalidação de cache (existe só o listener genérico Redis Pub/Sub, sem publisher) |
-| `servico-reserva` | Schema/migração (`reservas`, `eventos_saida`); scaffold de exceções; `spring-kafka` (producer) configurado | Toda a lógica de negócio: criação de reserva, lock otimista, pagamento mock, idempotência, expiração agendada, outbox relay, cancelamento — nenhum controller/service existe ainda |
-| `servico-notificacao` | Configuração do consumer Kafka (bootstrap servers, group id, deserializer JSON); scaffold de exceções | Listeners dos tópicos `reserva-confirmada`/`reserva-cancelada`; envio de e-mail; dead-letter topic |
+| Serviço                | Implementado                                                                                                                                                                                                                                        | Ainda não implementado                                                                                                                                                                                                                                                                                                                                                               |
+|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `servico-gateway`      | Roteamento por path para os 3 serviços com API HTTP; scaffold de exceções                                                                                                                                                                           | Rate limiting por IP; auditoria de escrita                                                                                                                                                                                                                                                                                                                                           |
+| `servico-autenticacao` | Schema/migração (`usuarios`); scaffold de exceções; `JWT_SECRET`/`JWT_EXPIRATION_MINUTES` configurados                                                                                                                                              | Cadastro, login, refresh, OAuth2 Google, bloqueio por tentativas — nenhum controller/service existe ainda                                                                                                                                                                                                                                                                            |
+| `servico-catalogo`     | CRUD de eventos completo; autorização por papel e posse; validação de JWT local; débito atômico de assentos (endpoint interno); cache Redis cache-aside com TTLs por endpoint; soft delete; exceções com código de erro alinhado ao contrato de API | Consumo de eventos Kafka do `servico-reserva` para invalidação de cache (existe só o listener genérico Redis Pub/Sub, sem publisher)                                                                                                                                                                                                                                                 |
+| `servico-reserva`      | Schema/migração (`reservas`, `eventos_saida`); scaffold de exceções; `spring-kafka` (producer) configurado                                                                                                                                          | Toda a lógica de negócio: criação de reserva (débito de assentos via `PATCH /eventos/{id}/reservar`, repassando `EVENTO_ESGOTADO` do catálogo sem tradução), pagamento mock, idempotência, expiração agendada (com devolução de assentos via `PATCH /eventos/{id}/liberar`, ainda não implementado no catálogo), outbox relay, cancelamento — nenhum controller/service existe ainda |
+| `servico-notificacao`  | Configuração do consumer Kafka (bootstrap servers, group id, deserializer JSON); scaffold de exceções                                                                                                                                               | Listeners dos tópicos `reserva-confirmada`/`reserva-cancelada`; envio de e-mail; dead-letter topic                                                                                                                                                                                                                                                                                   |
 
 Em resumo: **`servico-catalogo` é o único serviço com regras de negócio implementadas hoje.** Os
 demais têm a infraestrutura (schema, config de mensageria, scaffold de erros) pronta para receber a

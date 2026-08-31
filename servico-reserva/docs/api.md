@@ -23,13 +23,13 @@ Cria uma reserva (hold de assentos). Requer autenticação.
   "idEvento": "a1b2c3d4-...",
   "assentos": 2,
   "situacao": "PENDENTE",
-  "expiraEm": "2026-10-01T14:32:00Z"
+  "expiraEm": "2026-10-01T14:32:00"
 }
 ```
 
 > Dica de frontend: use `expiraEm` para exibir um contador regressivo na tela de checkout — a reserva é liberada automaticamente se o pagamento não for concluído até esse horário.
 
-**Erros possíveis**: `EVENTO_ESGOTADO` (409), `RESERVA_CONFLITO` (409, tentar novamente após reconsultar disponibilidade), `VALIDACAO_ERRO` (400, ex: mais de 6 assentos)
+**Erros possíveis**: `EVENTO_ESGOTADO` (409 — sem assentos suficientes, seja por falta de estoque ou por perder a corrida de concorrência para outra reserva simultânea; repassado como veio do `servico-catalogo`, sem tradução para um código próprio de reserva — tentar novamente após reconsultar disponibilidade), `VALIDACAO_ERRO` (400, ex: mais de 6 assentos)
 
 ---
 
