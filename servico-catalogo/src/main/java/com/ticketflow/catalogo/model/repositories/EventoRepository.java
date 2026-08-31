@@ -35,4 +35,17 @@ public interface EventoRepository extends JpaRepository<EventoORM, String>, JpaS
     @Query("UPDATE EventoORM e SET e.assentosDisponiveis = e.assentosDisponiveis - :quantidade "
             + "WHERE e.id = :id AND e.ativo = true AND e.assentosDisponiveis >= :quantidade")
     int reservarAssentos(@Param("id") String id, @Param("quantidade") int quantidade);
+
+    /**
+     * Inverso de {@link #reservarAssentos} - mesmo princípio de UPDATE atômico condicional,
+     * agora garantindo que o incremento não deixe {@code assentosDisponiveis} passar de
+     * {@code totalAssentos} (proteção contra liberação duplicada/retry do servico-reserva).
+     *
+     * @return quantas linhas foram afetadas: 1 se incrementou, 0 se o evento não existe/está
+     * inativo, ou se o incremento ultrapassaria o total de assentos do evento.
+     */
+    @Modifying
+    @Query("UPDATE EventoORM e SET e.assentosDisponiveis = e.assentosDisponiveis + :quantidade "
+            + "WHERE e.id = :id AND e.ativo = true AND (e.assentosDisponiveis + :quantidade) <= e.totalAssentos")
+    int liberarAssentos(@Param("id") String id, @Param("quantidade") int quantidade);
 }

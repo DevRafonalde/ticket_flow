@@ -157,9 +157,26 @@ public class EventoController {
         // Quem chama aqui é o servico-reserva, não um usuário logado - por isso a checagem é contra
         // o segredo interno compartilhado, e não contra um JWT (ver InternalApiKeyService).
         internalApiKeyService.validar(chaveInterna);
-
         eventoService.reservarAssentos(id, dto.getQuantidade());
+        return ResponseEntity.noContent().build();
+    }
 
+    @ApiResponse(responseCode = "500", description = "Erro no servidor", content = @Content)
+    @ApiResponse(responseCode = "400", description = "Quantidade ausente ou inválida (VALIDACAO_ERRO)", content = @Content)
+    @ApiResponse(responseCode = "401", description = "Chave de API interna ausente ou inválida (AUTENTICACAO_INTERNA_INVALIDA)", content = @Content)
+    @ApiResponse(responseCode = "404", description = "Evento não encontrado (EVENTO_NAO_ENCONTRADO)", content = @Content)
+    @ApiResponse(responseCode = "409", description = "Incremento ultrapassaria totalAssentos (LIMITE_ASSENTOS_EXCEDIDO)", content = @Content)
+    @ApiResponse(responseCode = "204", description = "Assentos liberados com sucesso", content = @Content)
+    @Operation(
+            summary = "[USO INTERNO] Liberar assentos de um evento",
+            description = "Incrementa 'quantidade' de assentosDisponiveis. Não é um endpoint de usuário final: "
+                    + "é chamado pelo servico-reserva ao extinguir uma reserva, autenticado com a chave de API "
+                    + "interna compartilhada entre serviços (header X-Internal-Api-Key), não um JWT de usuário."
+    )
+    @PatchMapping("/{id}/liberar")
+    public ResponseEntity<Void> liberarAssentos(@RequestHeader("X-Internal-Api-Key") String chaveInterna, @PathVariable String id, @Valid @RequestBody ReservarAssentosDTO dto) {
+        internalApiKeyService.validar(chaveInterna);
+        eventoService.liberarAssentos(id, dto.getQuantidade());
         return ResponseEntity.noContent().build();
     }
 }

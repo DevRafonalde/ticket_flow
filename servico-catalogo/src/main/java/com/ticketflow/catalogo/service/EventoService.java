@@ -5,6 +5,7 @@ import com.ticketflow.catalogo.exception.AcessoNegadoException;
 import com.ticketflow.catalogo.exception.ElementoNaoEncontradoException;
 import com.ticketflow.catalogo.exception.EventoEsgotadoException;
 import com.ticketflow.catalogo.exception.EventoPossuiReservasAtivasException;
+import com.ticketflow.catalogo.exception.LimiteAssentosExcedidoException;
 import com.ticketflow.catalogo.exception.ValidacaoException;
 import com.ticketflow.catalogo.model.entities.dto.DisponibilidadeEventoDTO;
 import com.ticketflow.catalogo.model.entities.dto.EventoDTO;
@@ -173,6 +174,22 @@ public class EventoService {
                 throw new ElementoNaoEncontradoException("Evento não encontrado para o id: " + id);
             }
             throw new EventoEsgotadoException("Não há assentos suficientes disponíveis para este evento.");
+        }
+    }
+
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.TODOS_EVENTOS, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.EVENTO_POR_ID, key = "#id"),
+            @CacheEvict(cacheNames = CacheNames.DISPONIBILIDADE_EVENTO, key = "#id")
+    })
+    public void liberarAssentos(String id, int quantidade) {
+        int linhasAfetadas = eventoRepository.liberarAssentos(id, quantidade);
+        if (linhasAfetadas == 0) {
+            if (!eventoRepository.existsById(id)) {
+                throw new ElementoNaoEncontradoException("Evento não encontrado para o id: " + id);
+            }
+            throw new LimiteAssentosExcedidoException("A quantidade de assentos a serem liberados excede o total de assentos do evento.");
         }
     }
 }
